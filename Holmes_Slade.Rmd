@@ -548,7 +548,7 @@ reg$fitted.values
 reg$coefficients
 ```
 
-As a final trivia point, data frames are really just lists of columns, each of which is an equal-length vector.
+As a final trivia point, tibbles are really just lists of columns, each of which is an equal-length vector.
 
 # Lesson 3: Reading in Data and Basic Sanity Checking
 ## The Working Directory
@@ -575,34 +575,34 @@ The \\ is a special character in R (and many other languages) called an "escape"
 
 ## Reading a csv File
 
-The command `list.files()` will show you all files in the directory you are working in.  To read in the data we first need to make sure that R knows what directory to read from. As mentioned earlier, we can set the working directory using the R Studio Gui under Session > Set Working Directory >  Choose Directory. Alternatively we can use the `set.wd()` command as previously discussed.
+The command `fs::dir_ls()` will show you all files in the directory you are working in.  To read in the data we first need to make sure that R knows what directory to read from. As mentioned earlier, we can set the working directory using the R Studio Gui under Session > Set Working Directory >  Choose Directory. Alternatively we can use the `set.wd()` command as previously discussed.
 
 from the csv file we type:
 ```{r, eval = FALSE}
-read.csv("Data_Files/intersalt.csv")
+read_csv("Data_Files/intersalt.csv")
 ```
 
 ```{r, include = FALSE}
-read.csv("Data_Files/intersalt.csv")
+read_csv("Data_Files/intersalt.csv")
 # just load it out of our current manuscript build directory
 ```
 
-The `read.csv()` function has lots of options. Type ?read.csv to display them.
+The `read_csv()` function has lots of options. Type ?read_csv to display them.
 
-* `sep = ","` tells R that a comma is what separates different columns.
-* `sep = "\t"` is another common option for tab delimited files
-* `strip.white = TRUE` is an option to prevent something like `"M"` and `"M "` and `" M "` from being considered three different things.
+* `delim = ","` tells R that a comma is what separates different columns.
+* `delim = "\t"` is another common option for tab delimited files
+* `trim_ws = TRUE` is an option to prevent something like `"M"` and `"M "` and `" M "` from being considered three different things.
 
-If you have a file from a collaborator in Quebec or Europe, you may use a comma as decimal place in your work. This means that you are not going to be using vanilla `read.csv()`. First, you will need to be sure that you do not use a comma as your column separator when you save a csv file. You will need to use something else. Most often this is a semicolon. R has a built-in function for those who use commas as decimals. This is `read.csv2()`, which is the same as `read.csv()` except that the default parameter `dec = "."` is changed to `dec = ","` and `sep = ","` is changed to `sep = ";"`.
+If you have a file from a collaborator in Quebec or Europe, you may use a comma as decimal place in your work. This means that you are not going to be using vanilla `read_csv()`. First, you will need to be sure that you do not use a comma as your column separator when you save a csv file. You will need to use something else. Most often this is a semicolon. R has a built-in function for those who use commas as decimals. This is `read_csv2()`, which is the same as `read_csv()` except that the default parameter `dec = "."` is changed to `dec = ","` and `sep = ","` is changed to `sep = ";"`.
 
 We should store this data in a variable so that we can do some analysis of it.  Since it is data from the [intersalt study](https://vincentarelbundock.github.io/Rdatasets/doc/DAAG/intersalt.html) we can name the variable intersalt. The file contains blood pressure (bp), sodium excretion (na) and nationality data. We have deliberately inserted a bad data point for instructional purposes.
 
 ```{r, eval = FALSE}
-intersalt <- read.csv("Data_Files/intersalt.csv")
+intersalt <- read_csv("Data_Files/intersalt.csv")
 ```
 
 ```{r, include = FALSE}
-intersalt <- read.csv("Data_Files/intersalt.csv")
+intersalt <- read_csv("Data_Files/intersalt.csv")
 ```
 
 The `head()` function is a quick way to look at what the data looks like in a snippet.
@@ -611,6 +611,8 @@ The `head()` function is a quick way to look at what the data looks like in a sn
 head(intersalt) # gives us the first 6 lines
 head(intersalt,10) #gives us the first 10 lines
 ```
+
+Notice that the tibble displays the data type of each column underneath the column name. 
 
 ## Surveying your data
 The `str()` or structure function is where we should go next. We want to find out what assumptions R has made about the nature of the data and change them if need be.
@@ -621,6 +623,12 @@ The command `str(intersalt)` gives the following output:
 str(intersalt)
 ```
 
+The `glimpse()` function is similar to `str()`, except that it displays all columns down the page and tries to show you as much data as posisble:
+
+```{r, echo = FALSE}
+glimpse(intersalt)
+```
+
 `summary(intersalt)` conveys some summative information:
 
 ```{r, echo = FALSE}
@@ -628,7 +636,6 @@ summary(intersalt)
 ```
 
 This means that something is wrong with the blood pressure data. The phenomenon observed here occurs when there is non-numeric data in the data set. This is extremely common when there are measurements that are below or above a calibration range. For example, glucose < 1 mmol/L or troponin < 5 ng/L. 
-
 
 ## Coping with Non-numeric Data
 
@@ -638,25 +645,9 @@ So what can we do? See what happens when we type:
 as.numeric(intersalt$bp)
 ```
 
-Wait--what just happened here? This makes no sense at all. These are all integers between 1 and `r max(as.numeric(intersalt$bp))`. Do you see what has happened?
+The `as.numeric()` function converts the bp data from a character to a numeric. But, why is there now a NA in the data?
 
-R's default handling of converting of a factor variable to a numeric variable is to convert it to the number of the factor (1 through `r max(as.numeric(intersalt$bp))` in this case). We personally find this irritating, but it is evidently working as intended.
-
-So the correct thing to do is:
-
-```{r, results = "hide"}
-as.numeric(as.character(intersalt$bp))
-```
-
-The default R behaviour of treating strings as factors can be over--ridden when the csv file is read by specifying `stringsAsFactors = FALSE`. When one does this, the `as.character` part of the expression above is unnecessary.
-
-```{r}
-intersalt <- read.csv(file = "Data_Files/intersalt.csv", stringsAsFactors = FALSE)
-num.bp <- as.numeric(intersalt$bp)
-num.bp
-```
-
-Something else somewhat surprising has happened. What do you notice? See the NA? This is what all non-numerics become, even if one is $<40$ and another is $>200$ ("NA" stands for "not available").  So, be careful. If we want to preserve something of what was actually in the data file, we will need another approach. If we are happy to have all non-numerics display NAs, then what we have here is fine.
+This is what all non-numerics become, even if one is $<40$ and another is $>200$ ("NA" stands for "not available").  So, be careful. If we want to preserve something of what was actually in the data file, we will need another approach. If we are happy to have all non-numerics display NAs, then what we have here is fine.
 
 But if we now want to look at the statistics of the bp column, the NA results cannot contribute. It would be good to figure out what is going on.
 
@@ -681,34 +672,37 @@ bad.result <- is.na(num.bp)
 bad.result
 which(bad.result)
 intersalt$bp[bad.result]
+
+###or use filter from dplyr###
+filter(intersalt, is.na(as.numeric(bp)))
 ```
 
-## Simple replacements with `gsub()`
+## Simple replacements with `str_replace()`
 
-There is another supremely useful function called `gsub()`, global substitution, which is sort of equivalent to Excel's find and replace but ultimately much more powerful. In its simplest form it is invoked on vector x with this syntax: `gsub(pattern, replacement, x)`
+There is another supremely useful function called `str_replace()`, global substitution, which is sort of equivalent to Excel's find and replace but ultimately much more powerful. In its simplest form it is invoked on vector x with this syntax: `str_replace(string, pattern, replacement)`
 
 For example, we already have a vector `x <- c("The", "story", "of", "Hanzel", "and", NA, "is", "frightening")`. But if we wanted to invent a new story we could write:
 
 ```{r}
 x <- c("The", "story", "of", "Hanzel", "and", "Gretel", "is", "frightening")
-gsub("Gretel","Olga",x)
-# and to change x itself:
-x <- gsub("Gretel","Olga",x)
+str_replace(x, "Gretel", "Olga")
+#and to change x itself
+x <- str_replace(x, "Gretel", "Olga")
 x
 ```
 
 ### Exercise
-1. Read back in your original intersalt data from the csv file using the `read.csv()` command we used earlier.
-    + Replace all O's in the bp column with 0's using `gsub()`.
+1. Read back in your original intersalt data from the csv file using the `read_csv()` command we used earlier.
+    + Replace all O's in the bp column with 0's using `str_replace()`.
     + Convert the bp column to numerics as it should be
     + Now get a summary of the data and convince yourself it makes sense.
 
 ```{r, include = FALSE}
 ###Solution###
-intersalt <- read.csv(file = "Data_Files/intersalt.csv", stringsAsFactors = FALSE)
-intersalt$bp <- gsub("O", "0", intersalt$bp )
+intersalt <- read_csv(file = "Data_Files/intersalt.csv")
+intersalt$bp <- str_replace(intersalt$bp, "O", "0")
 intersalt$bp <- as.numeric(intersalt$bp)
-str(intersalt)
+intersalt
 summary(intersalt)
 ```
                           
@@ -727,7 +721,7 @@ We will go into detail on beautifying our plots later, but there are many things
 We can read in a toy data set in order to show how boxplots are made. [This data set](https://vincentarelbundock.github.io/Rdatasets/doc/carData/Leinhardt.html) is comprised of infant mortality data as a function of country.
 
 ```{r}
-mortality <- read.csv("Data_Files/Leinhardt.csv")
+mortality <- read_csv("Data_Files/Leinhardt.csv")
 boxplot(infant ~ region, data = mortality)
 ```
 
