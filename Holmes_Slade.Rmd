@@ -738,7 +738,7 @@ In this hour we are going to look at one of our very common tasks, which is regr
 Let's start with OLS and let's use the tube.type dataset we used in the last hour. Let's plot the PTH results of EDTA and SST against one another, since we know that there are statistical differences in the mean and median. The function we will use is called `lm()`
 
 ```{r}
-tube.data <- read.csv(file = "Data_Files/tube_data.csv")
+tube.data <- read_csv(file = "Data_Files/tube_data.csv")
 OLS.reg <- lm(EDTA ~ SST,data = tube.data)
 summary(OLS.reg)
 #alternative syntax
@@ -796,7 +796,7 @@ plot(conc, response, xlab = "Concentration", ylab = "(Peak Area of Analyte)/(Pea
   
 ```{r, include = FALSE}
 ###Solution###
-tube.data <- read.csv(file = "Data_Files/tube_data.csv")
+tube.data <- read_csv(file = "Data_Files/tube_data.csv")
 OLS.reg <- lm(EDTA ~ SST,data = tube.data)
 conc <- seq(from = 1, to = 50, by = 10)
 response <- (conc/20)^(0.7)
@@ -844,7 +844,7 @@ PB.reg <- mcreg(tube.data$SST,tube.data$EDTA, method.reg = "PaBaLarge")
 ```{r,include = FALSE}
 ###Solution###
 library(mcr)
-tube.data <- read.csv(file = "Data_Files/tube_data.csv")
+tube.data <- read_csv(file = "Data_Files/tube_data.csv")
 PB.reg <- mcreg(tube.data$SST,tube.data$EDTA, method.reg = "PaBa")
 plot(PB.reg) # plots a nice generic plot automatically
 
@@ -882,7 +882,7 @@ Let's suppose we are comparing two creatinine methods. Let's read in the data fr
 
 ```{r, include = FALSE}
 ###Solution###
-cre <- read.csv("Data_Files/cre_data.csv",sep = ",")
+cre <- read_csv("Data_Files/cre_data.csv",sep = ",")
 avg <- (cre$Method1+cre$Method2)/2
 diff <- (cre$Method1-cre$Method2)
 cre <- cbind(cre,avg,diff)
@@ -891,7 +891,7 @@ plot(cre$avg,cre$diff)
 Now, we are not done. The plot does not look very nice. It also does not have a horizontal line at the mean difference and it does not have the upper and lower confidence intervals of the mean. We want it to look something like this ultimately:
 
 ```{r, echo = FALSE}
-cre <- read.csv("Data_Files/cre_data.csv",sep = ",")
+cre <- read_csv("Data_Files/cre_data.csv")
 avg <- (cre$Method1+cre$Method2)/2
 diff <- (cre$Method1-cre$Method2)
 cre <- cbind(cre,avg,diff)
