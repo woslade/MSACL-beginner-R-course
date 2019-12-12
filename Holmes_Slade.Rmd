@@ -1032,56 +1032,57 @@ For example, suppose you have to generate 100 jpeg figures using a loop (we will
 ```{r}
 number <- seq(from = 99, to = 95, by = -1)
 for (i in number) {
-    phrase <- paste(i, "bottles of beer on the wall", i,
-                    "bottles of beer. \nTake one down, pass it around.",
-                    i-1, "bottles of beer on the wall \n")
-    cat(phrase)
+  phrase <- str_c(i, "bottles of beer on the wall", i,
+                  "bottles of beer. \nTake one down, pass it around.",
+                  i-1, "bottles of beer on the wall \n", sep = " ")
+  cat(phrase)
 }
 ```
 
-In other words, paste() lets us create uninterrupted strings from other strings or variables.  Here is a more practical example where we need to make a bunch of jpegs all at once. The script creates a directory so that you don't have to delete all the jpegs we are going to make.  Paste automatically uses a space between all the things you are pasting together. This is not always what you want so you can specify with `sep = "blablabla"`. 
+In other words, str_c() lets us create uninterrupted strings from other strings or variables.  Here is a more practical example where we need to make a bunch of jpegs all at once. The script creates a directory so that you don't have to delete all the jpegs we are going to make.  Paste automatically uses a space between all the things you are pasting together. This is not always what you want so you can specify with `sep = "blablabla"`. 
 
 ```{r}
-paste("When my boss is talking my brain says, '", "'. It's like I am dying inside.",
+str_c("When my boss is talking my brain says, '", "'. It's like I am dying inside.",
       sep = "Bla Bla Bla")
 ```
 
 Here is a slightly more practical example:
 
 ```{r, results = "hide", warning = FALSE}
+library(fs)
 
-dir.create("My_Figures") # create a junk folder in the current working directory.
+dir_create("my_figures") # create a junk folder in the current working directory.
 #to create a directory elsewhere you would need the full path
 
 for (i in 1:10) {
-    random.data <- rnorm(1000,i,0.3) #create Gaussian random data with a mean of i and an SD of 0.3
-    file.name <- file.path("My_Figures",paste("figure_number", i, ".jpg", sep = "" ))
-    print(file.name) #for your benefit to see what is going on
-    jpeg(file.name) #open a jpeg file to dump the image into
-    hist(random.data, col = i) #create the image
-    dev.off() #close the jpeg file
+  random.data <- rnorm(1000,i,0.3) #create Gaussian random data with a mean of i and an SD of 0.3
+  file.name <- file.path("my_figures",paste("figure_number", i, ".jpg", sep = "" ))
+  print(file.name) #for your benefit to see what is going on
+  jpeg(file.name) #open a jpeg file to dump the image into
+  hist(random.data, col = i) #create the image
+  dev.off() #close the jpeg file
 }
 ```
 
 Now go into the ``My_Figures'' directory and see what has happened. You will notice that R takes care of the fact that Mac/Linux and Windows platforms use different kinds of slashes in the file structures. 
 
-There are other cool things that you can do with strings. The `strsplit()` function break strings apart based on separators within the string:
+There are other cool things that you can do with strings. The `str_split()` function break strings apart based on separators within the string:
 
 ```{r}
 line <- "Come on and rock me Amadeus."
-split.line <- strsplit(line, " ")
+split.line <- str_split(line, " ")
 split.line
 ```
 
-At times it is necessary to reduce all letters to capitals or to smalls. The functions that can accomplish this are `toupper()` and `tolower()`. This is particularly useful to process data for further analysis. For example, if you had survey data containing "Yes", "YES", "yes", "Y", and "y" and wanted all of them to be turned into "Y" so that you could do statistics later, you might do something like this:
+At times it is necessary to reduce all letters to capitals or to smalls. The functions that can accomplish this are `str_to_upper()` and `str_to_lower()`. This is particularly useful to process data for further analysis. For example, if you had survey data containing "Yes", "YES", "yes", "Y", and "y" and wanted all of them to be turned into "Y" so that you could do statistics later, you might do something like this:
 
 ```{r}
 responses <- c("Yes","no","y","y","n","N","NO","Y","YES","Y")
 #clean up this mess
-responses <- toupper(responses)
+responses <- str_to_upper(responses)
 responses
-responses <- gsub("YES", "Y", responses)
-responses <- gsub("NO", "N", responses)
+responses <-str_replace(responses, "YES", "Y")
+responses <-str_replace(responses, "NO", "N")
 responses
 ```
 
@@ -1091,8 +1092,8 @@ Thought: What if you had a lot more possible responses that all started with "Y"
 responses <- c("Yes","no","y","y","n","N","NO","Y","YES","Y","yes sir",
                "yep", "YO","Nay Laddie", "Nej", "Nein","Non", "Yayaya",
                "Nee","No way Jose","Nah", "Nei","não")
-responses <- gsub("(^[Yy].*)", "Y", responses)
-responses <- gsub("(^[Nn].*)", "N", responses)
+responses <- str_replace(responses, "(^[Yy].*)", "Y")
+responses <- str_replace(responses, "(^[Nn].*)", "N")
 responses #magic
 
 # ^ means "starts with"
@@ -1103,26 +1104,26 @@ responses #magic
 
 This is just meant to show you that stuff like this is possible. You can learn about it another time.
 
-The `substr()` function has syntax of `substr(x, start, stop)`.  This can be conveniently used to get part of a string when what you want is stuck in the middle. For example if you wanted the last 5 characters of an 18 character string--because it contained, say, the time--you could do something like this:
+The `str_sub()` function has syntax of `substr(x, start, stop)`.  This can be conveniently used to get part of a string when what you want is stuck in the middle. For example if you wanted the last 5 characters of an 18 character string--because it contained, say, the time--you could do something like this:
 
 ```{r}
-substr("Feb,02,2015  07:34",14,18)
+str_sub("Feb,02,2015  07:34",14,18)
 ```
 
-If you don't happen to know how long the string you are breaking up is, you can use the `nchar()` function. The `length()` function won't work; it tells you how many elements are in a vector. You want `nchar()`.
+If you don't happen to know how long the string you are breaking up is, you can use the `str_length()` function. The `length()` function won't work; it tells you how many elements are in a vector. You want `str_length()`.
 
 ```{r}
-nchar("Here kitty kitty kitty") 
+str_length("Here kitty kitty kitty") 
 length("Here kitty kitty kitty")
 ```
 
 ### Exercise
-* Convert a full name (let's start with `name<- "William Osler"`) to an abbreviated name made up of the first three letters of the first name and the first the letters of the last name, all in lower case. For example "Stephen Master" would become "stemas".
+* Convert a full name (let's start with `name <- "William Osler"`) to an abbreviated name made up of the first three letters of the first name and the first the letters of the last name, all in lower case. For example "Stephen Master" would become "stemas".
 
-NOTE: the `strsplit()` function produces a list as its output which we find kind of inconvenient generally. To turn it back into a vector just apply the command unlist to it.  ie:
+NOTE: the `str_split()` function produces a list as its output which we find kind of inconvenient generally. To turn it back into a vector just apply the command unlist to it.  ie:
 
 ```{r}
-x <- strsplit("Dan Holmes", " ") #creates a list
+x <- str_split("Dan Holmes", " ") #creates a list
 str(x)
 x[[1]][1]
 x[[1]][2] #inconvenient syntax
@@ -1131,28 +1132,33 @@ x <- unlist(x)
 x
 x[1]
 x[2] #happy syntax
+
+#or, use the simplify = TRUE option to return a character matrix for easier indexing
+x <- str_split("Dan Holmes", " ", simplify = TRUE)
+x[1]
+x[2]
 ```
 
 ```{r, include = FALSE}
 ###Solution###
-name<- "William Osler"
-split.name <- tolower(unlist(strsplit(name," ")))
-ID <- paste(substr(split.name[1],1,3), substr(split.name[2],1,3),sep = "")
+full.name  <- "William Osler"
+split.name <- str_to_lower(str_split(full.name, " ", simplify = TRUE))
+abbrv.name <- str_c(str_sub(split.name[1], 1, 3), 
+                    str_sub(split.name[2], 1, 3))
 
 ```
 
+## Oh `str_detect()`, how I love thee. Let me count the "wheys"
 
-## Oh `grep()`, how I love thee. Let me count the "wheys"
+str_detect is a very useful function that allows you to look for patterns rather than an exact match. This can be very helpful when the value of interest is buried in other text. For example, you might want to pull out anything that looks like a Personal Health Number or telephone number. 
 
-Grep is a very useful function that allows you to look for patterns rather than an exact match. This can be very helpful when the value of interest is buried in other text. For example, you might want to pull out anything that looks like a Personal Health Number or telephone number. 
-
-The syntax for `grep()` is 
+The syntax for `str_detect()` is 
 
 ```{r, eval = FALSE}
-grep(pattern-to-find, what-vector-to-search-in)
+str_detect(string, pattern-to-find)
 ```
 
-Grep returns the *indices* of the pattern matches in the vector. For example, let's pull the entire web of science publications list and then find all the journals that contain the word "ophthalmology". 
+str_detect returns the *indices* of the pattern matches in the vector. For example, let's pull the entire web of science publications list and then find all the journals that contain the word "ophthalmology". 
 
 This code will download the Web of Science publication abbreviations database
 ```{r}
@@ -1167,7 +1173,7 @@ abbrev <- read.csv("Data_Files/wos_abbrev_table.csv",
 Now, let's find all the journals with the word ophthalmology in them.
 
 ```{r}
-ophtho.journals <- grep("Ophthalmology", abbrev$full)
+ophtho.journals <- str_which(abbrev$full, "Ophthalmology")
 head(ophtho.journals)
 length(ophtho.journals)
 ```
@@ -1176,8 +1182,6 @@ If we want to find the *names* of these journals, it can be accomplished in two 
 
 ```{r}
 abbrev[ophtho.journals,1]
-#alternatively
-#grep("Ophthalmology", abbrev$full, value = TRUE)
 ```
 
   
@@ -1190,11 +1194,11 @@ abbrev[ophtho.journals,1]
 
 ```{r,include = FALSE}
 ###Solution###
-food.choices <- read.csv("Data_Files/starwars_menu.csv", sep = ",", header = TRUE)
-head(food.choices)
-whey.results <- grep("whey", food.choices$Lunch)
+food.choices <- read_csv("Data_Files/starwars_menu.csv")
+food.choices
+whey.results <- str_which(food.choices$Lunch, "whey")
 #all rows containing whey
-contains.whey <- food.choices[whey.results,]
+contains.whey <- food.choices[whey.results, ]
 contains.whey
 length(contains.whey$Subject) #7 people want whey.
 #those that chose whey
@@ -1203,11 +1207,9 @@ chose.whey
 #those that did not choose whey
 no.whey <- food.choices$Subject[-whey.results]#note the negative sign
 no.whey
-#alternatively
-#food.choices[grep("whey", food.choices$Lunch, invert = TRUE),]$Subject
 ```
 
-Finding exact matches is just scratching the surface of what `grep()` can do. It can also be used to match sophisticated patterns using the same regular expressions tools that `gsub()` uses. For example, blood collection specimen numbers in lab start with X,M,T,W,H,F, or S and are then followed by 3--6 digits. So we can make a grep search that finds only this pattern so we can see what samples represent patient results (as opposed to quality control material).
+Finding exact matches is just scratching the surface of what `str_which` can do. It can also be used to match sophisticated patterns using the same regular expressions tools that `str_replace` uses. For example, blood collection specimen numbers in lab start with X,M,T,W,H,F, or S and are then followed by 3--6 digits. So we can make a grep search that finds only this pattern so we can see what samples represent patient results (as opposed to quality control material).
 
 ```{r}
 x <- c("D123","F12414","X1324556","M432","H2141","S1")
@@ -1222,8 +1224,7 @@ Some of these will match the accession numbers
 # {m,n} means previous item matches at least m and at most n times
 # $ means ends with 
 pattern <- "^[X|M|T|W|H|F|S][0-9]{3,6}$"
-grep(pattern,x)
-grep(pattern, x, value = TRUE)
+str_which(x, pattern)
 ```
 
 Again, Regular Expressions could be an entire two day course to itself. For now, just know that this type of advanced pattern finding is possible.
