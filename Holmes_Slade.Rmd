@@ -2925,13 +2925,8 @@ The same package allows you to read in a specific sheet from an xlsx file starti
 
 
 # Projects
-## Option 1: Your Own Data
 
-This is your opprotunity to load up your own data and spend some time practicing on whatever data project has been driving you mad in Excel. Dan and Will are around and happy to help you get started, help you find the right function, or troubleshoot your errors. This is the best way to learn and consolidate - try it for yourself.
-
-If you didn't have anything ready to go, no problem - see below for two project ideas you can use to practice.
-
-## Option 2: Some Laboratory Data
+## Option 1: Some Laboratory Data
 
 This file contains some very nice clean data about lab tests at a *totally fictional* hospital:
 ```{r}
@@ -2956,7 +2951,7 @@ Then see if you can find some utilization insights:
 
 Of course these are just ideas to get you started - there are many ways you may wish to approach this data, and many sets of questions you could ask. Go wild exploring your new found skill set!
 
-## Option 3: Clean Up Some Research Data -- Bad Medicine
+## Option 2: Clean Up Some Research Data -- Bad Medicine
 
 This is raw data from a study published on a familial hypercholesterolemia cohort from 2005. The birthdates are not real. The data were hand-transcribed by a resident into Excel.
 
@@ -3120,7 +3115,7 @@ fh %>%
 # pretty unimpressive... supports the traditional view
 ```
 
-## Option 4: Flat File Formatting
+## Option 3: Flat File Formatting
 
 We are going to take flat file export data from an SCIEX API 5000 mass spectrometer and reformat the flat file for upload to the SunQuest lab information system. The process will be nearly identical for any instrument and LIS combination.  The file you want to import is called API_Flat_File.csv. Before you do, open the file in a text editor or Excel. You will notice that the first 26 lines contain useless information, which you want to exclude when you read the file in. In fact, if you don't exclude them, R won't interpret the shape of the dataframe properly and this will cause confusion and delay, as Sir Topham Hatt says.  The other thing to note is that this is a tab-delimited text file, not a comma-delimited file. So, sep = "\\t" is a required parameter for `read.csv()`, not sep = ",". Have a look at `help(read.csv)` to learn how to exclude the initial lines of a file--you want to look at the example of the skip option.
 
@@ -3182,114 +3177,4 @@ output <- data.frame(rep("API",row.nums),ms.out$Name,rep("ALD",row.nums),ms.out$
 
 #write the processed file
 write.table(file = "processed_flat_file.txt",output,row.names = FALSE,col.names = FALSE,sep = ",", quote = FALSE)
-```
-
-## Option 5: Linearity Testing
-
-We have provided calibration curve data in the file "Cal_Curve_Data.csv". The CLSI guidelines suggest evaluation of linearity using the method of Emancipator and Kroll. In this approach, the data is fit with a linear regression (OLS, not Deming or PB; why?), then is it fit with quadratic regression, and then cubic regression. The quadratic and cubic fits are compared to each other based on which one has the lowest summed squared residuals, and the winner is then compared to the linear fit using a difference plot.
-
-Import the data to a variable using `read.csv()` or `read_csv()`.
-
-Determine the linear regression fit with $1/x^2$ weighting. This is accomplished by including the option `weights = 1/conc^2`. Assign the linear model to a variable called `lin.reg`. Look at `summary(lin.mod)`.
-
-Perform quadratic regression by fitting the curve to a function of the form: `signal ~ A + B*conc + C*conc^2`. It likely does not matter if you weight the regression, but for consistency weight with $1/x^2$. Store the output of this regression in a variable called quad.reg. Look at `summary(quad.mod)`.  
-
-Perform cubic regression by fitting the curve to a function of the form: `signal ~ A + B*conc + C*conc^2 + D*conc^3`. Weight with $1/x^2$. Store the output of this regression in a variable called `cube.reg`. Look at `summary(cube.mod)`. 
-
-Which of the two polynomial fits is best?
-
-For the sake of argument, let's suppose we can tolerate up to 5% non-linearity. Plot a difference plot of the fitted values of the best polynomial fit against the linear fit. Express the y-axis as a percent. So what you are actually plotting is, say, $(poly\_fitted\_y - linear\_fitted\_y)/conc*100$ vs conc. Use `abline()` to plot the horizontal lines that represent a deviation from linearity of $\pm5$%. 
-
-What is the linear range of the assay?
-
-```{r, include = FALSE, eval = FALSE}
-###Solution###
-cal.data <- read.csv(file = "Data_Files/cal_curve_data.csv",  header = TRUE, sep = ",")
-#linear
-lin.mod <- lm(signal~conc, data = cal.data, weights = 1/conc^2)
-#quadratic
-quad.mod <- nls(signal~A+B*conc+C*conc^2,data = cal.data, start = list(A = 0,B = 1,C = 0), weights = 1/conc^2)
-#cubic
-cub.mod <- nls(signal~A+B*conc+C*conc^2+D*conc^3,data = cal.data, start = list(A = 0,B = 1,C = 0,D = 0), weights = 1/conc^2)
-#cubic fits best
-#plot the fits
-plot(cal.data$conc,cal.data$signal)
-lines(cal.data$conc,predict(lin.mod), col = "blue")
-lines(cal.data$conc,predict(cub.mod), col = "red")
-
-#prepare a difference plot
-y <- (predict(cub.mod)-predict(lin.mod))/cal.data$conc*100
-x <- cal.data$conc
-plot(x,y,type = "l", ylim = c(-10,10), ylab = "Difference between Cubic and Linear (%)",xlab = "Concentration")
-abline(h = 0)
-abline(h = -5, lty = 3)
-abline(v = 808,lty = 3)
-#Linear to about 800
-```
-
-## Option 6: Finding a peak area from raw data
-
-Peak areas are calculated by numerical estimation methods by the software that comes with the mass spectrometer. We will look at a rudimentary example of how this is accomplished. For this example, we will use Simpson's Rule.
-
-Simpson's Rule says that if a curve is divided $n$ segments of width $w$ that the area is approximated by:
-
-$$A = \frac{w}{3}(h_0 + 4h_1+ 2h_2 + 4h_3 \ldots 2h_{(n-2)}+4h_{(n-1)}+h_n),$$ where the $h$'s are the heights of the curve. 
-
-Write a function that accepts final time, initial time and cps values and then calculates the Simpsons's Rule Area. Show how you can correct the peak area for the baseline. 
-
-Here is a picture that shows what you are working on:
-
-```{r}
-chrom.data <- read.csv("Data_Files/Chrom_Data.csv",sep = ",")
-attach(chrom.data) #forgive my laziness in using attach
-plot(t,h, type = "o", cex = 0.5, ylab = "CPS", xlab = "Retention Time (min)",ylim = c(0,12000))
-abline(v = 1.0,lty = 2)
-abline(v = 2.0,lty = 2)
-```
-
-```{r, include = FALSE, eval = FALSE}
-###Solution###
-chrom.data <- read.csv("Data_Files/chrom_data.csv",sep = ",")
-plot(h ~ t,
-     data = chrom.data,
-     type = "o",
-     cex = 0.5, ylab = "CPS",
-     xlab = "Retention Time (min)",
-     ylim = c(0,12000))
-abline(v = 1.0,lty = 2)
-abline(v = 2.0,lty = 2)
-
-simpsons <- function(a,b,h){
-    n <- length(h)
-    if(n == 3){
-        coeff <- c(1,4,1)
-    }else if (n>= 3){
-        coef <- c(1,4,rep(c(2,4),(n-3)/2),1)
-    }else{
-        return("not enough points")
-    }
-    w <- (b-a)/(n-1)
-    A <- w/3*sum((h*coef))
-    return(A)
-}
-
-#check that function is working - simpson's rule is exact on quadratics
-#integral from 0 to 2 of x^2 is exactly 9
-i <- (seq(from = 0,to = 3,length.out = 15))^2
-simpsons(0,3,i)
-#works
-
-#pull out the peak
-peak <- subset(chrom.data,chrom.data$t>= 1&chrom.data$t<= 2)
-peak.area <- simpsons(1,2,peak$h)
-peak.area
-
-#and if you want to subtract the baseline
-baseline <- subset(chrom.data,chrom.data$t<1|chrom.data$t>2)
-baseline.corrected <- peak.area-mean(baseline$h)*1 #subtract mean baseline*1 min
-baseline.corrected
-
-#add groove to plot for coolness
-mb <- mean(baseline$h)
-polygon(x = peak$t, y = peak$h, col = rgb(0,0,1,0.5))
 ```
