@@ -1548,7 +1548,7 @@ unique(metformin$speciality)
 
 ## A tidy way to handle strings
 
-In lesson four we learned some useful tricks for handling strings using `gsub()`, `grep()`, `oupper()`, `tolower()`, and `strsplit()`. Tidyverse has functions which perform similar, well, functions - and a whole lot more. These are all in the `stringr` package (included in the tidyverse) and you may find some of these come in handy when working to clean your data:
+In lesson four we learned some useful tricks for handling strings using `str_replace()`, `str_detect()`, `oupper()`, `str_to_lower()`, and `str_split()`. These are all in the `stringr` package (included in the tidyverse) and you may find some of these come in handy when working to clean your data:
 
 * `str_length()`
 * `str_pad()`, `str_trim()`
@@ -1572,7 +1572,8 @@ library(tidyverse)
 name<- "William Osler"
 name.low <- str_to_lower(name)
 name.split <- unlist(str_split(name.low, " "))
-name.abbrv <- str_c(str_sub(name.split[1],1,3), str_sub(name.split[2], 1, 3), sep = "")
+name.abbrv <- str_c(str_sub(name.split[1],1,3), 
+                    str_sub(name.split[2], 1, 3))
 ```
 
 2. Read in starwars_menu.csv. The data is the pre-selected menu for a banquet. Have a look at the data. The caterer needs to know how many individuals want "whey" but the "whey" is buried in things like "the whey, the shoots and the rice".
@@ -1950,7 +1951,7 @@ And you can do lots of other things with this data. For demonstration purposes o
 library(ggplot2)
 library(scales)
 library(tidyr)
-K.data <- read.csv("Data_Files/Potassium.csv", sep = ",")
+K.data <- read_csv("Data_Files/Potassium.csv", sep = ",")
 K.data %>%
   mutate_at(.funs = funs(dmy_hm), .vars = vars(COLLECTION_DATE:RECEIVED_DATE)) %>%
   mutate(TAT = difftime(RESULT_DATE, ORDERED_DATE, units = "min")) %>%
@@ -2007,7 +2008,7 @@ chopper <- function(word) {
 cv <- function(x){
   mu.x <- mean(x)
   sd.x <- sd(x)
-  return(round(sd.x/mu.x*100,2))
+  return(round(sd.x / mu.x * 100, 2))
 }
 #test it:
 x <- c(22.1,23.3,21.4,19.7,23.2,22.8,24.3,18.2)
@@ -2017,13 +2018,14 @@ cv(x)
 2. Write a function called `clean` that removes any less than or greater than signs from your data but preserves the number that follows and returns a numeric vector of your data.
 
 ```{r, include = FALSE}
-###Solution###
+#Solution
 clean <- function(x){
-	x <- as.character(x) #make sure we are not dealing with factor
-	better <- gsub("<","",x)
-	best <- gsub(">","",better)
-	return(as.numeric(best))
+  x <- as.character(x) #make sure we are not dealing with factor
+  better <- str_replace(x, "<", "")
+  best   <- str_replace(better, ">", "")
+  return(as.numeric(best))
 }
+
 #test
 dirty <- c("1","3","<0.3","<4","5",">9")
 clean(dirty)
@@ -2166,13 +2168,13 @@ sentence <- c("It's","a","beautiful","day","in","Salzburg")
 ```{r, include = FALSE}
 ###Solution###
 schnitzel.finder <- function(sentence){
-    sen.vec <- unlist(strsplit(sentence," ",fixed = TRUE))
-    sen.vec <- tolower(sen.vec) #this turns upper case SCHNITZEL to lower case schnitzel
-    if("schnitzel" %in% sen.vec){
-        return("This sentence contains schnitzel")
-    }else{
-        return("This sentence is schnitzel-free")
-    }
+  sen.vec <- str_split(sentence, " ", simplify = TRUE)
+  sen.vec <- str_to_lower(sen.vec) #this turns upper case SCHNITZEL to lower case schnitzel
+  if("schnitzel" %in% sen.vec){
+    return("This sentence contains schnitzel")
+  }else{
+    return("This sentence is schnitzel-free")
+  }
 }
 #test
 schnitzel.finder("Stephen ordered schnitzel at the restaurant but there was none left")
@@ -2231,7 +2233,7 @@ You can also embed loops inside of loops and, where necessary, call the indices 
 ```{r}
 # Examine features of irises
 # Loop over the different species and find the mean of the different 4 different petal measurements.
-iris <- read.csv("Data_Files/iris.csv")
+iris <- read_csv("Data_Files/iris.csv")
 species <- unique(iris$Species)
 features <- names(iris)[1:4]
 mean.results <- data.frame(species = rep(NA,3),
@@ -2812,58 +2814,59 @@ ggplot(mpg, aes(class, cty))+
 ```
 
 # Lesson 12: File Operations
-You are going to need to read files in, as you have done with `read.csv()`. You are going to need to write files--whether it is the statistical output or perhaps the content of a dataframe that you have produced through your efforts. Sometimes you need to remove files or move files too. All of these file operations are possible from within R.  You can also both read and write xls or xlsx files, which we will touch on also. This stuff is dry but it is necessary. 
+You are going to need to read files in, as you have done with `read_csv()`. You are going to need to write files--whether it is the statistical output or perhaps the content of a dataframe that you have produced through your efforts. Sometimes you need to remove files or move files too. All of these file operations are possible from within R.  You can also both read and write xls or xlsx files, which we will touch on also. This stuff is dry but it is necessary. 
 
 What files are in the current working directory? This does the trick, as we have discussed.
 
 ```{r, eval = FALSE}
-list.files()
+dir_ls()
 ```
 
-If you want the figures in a specific directory, you can put it in the parentheses as in `list.files("Name_of_Subdirectory")`.  You can also provide the "full path" of a directory too.
+If you want the figures in a specific directory, you can put it in the parentheses as in `dir_ls(path = "Name_of_Subdirectory")`.  You can also provide the "full path" of a directory too.
 
 ```{r, eval = FALSE}
-list.files("/")
+dir_ls(path = "/")
 # should give you all the files in the C: directory in windows
 #   and the root directory in Linux and Mac OSX
 ```
 Let's suppose we want to see if a file is present--so that we don't try to perform an operation on a non-existent file, or to ensure that some other event is complete.  We can ask as follows:
 
 ```{r}
-file.exists("Potassium.csv")
-file.exists("Data_Set_3.1459.csv")
+file_exists("Data_Files/Potassium.csv")
+file_exists("Data_Files/Data_Set_3.1459.csv")
 ```
 
 We might want to create a directory and then move or copy some files into it.
 
 ```{r, eval = FALSE}
-dir.create("Junk_Here")
-if (file.exists("Junk_Here")) { #confirm the successful creation of the directory
-    file.copy("Potassium.csv", "Junk_Here/bla.csv")
+dir_create("junk_here")
+
+if (file_exists("junk_here")) {
+  file_copy("Data_Files/Potassium.csv", "junk_here/bla.csv")
 } else {
-    print("Hey -- That directory did not get created")
+  print("Hey -- That directory did not get created")
 }
 ```
 
-Note that if you provide `file.copy()` a vector of file names, `file.copy()` will copy all the files in the vector.
+Note that if you provide `file_copy()` a vector of file names, `file_copy()` will copy all the files in the vector.
 
 ### Exercise
-1.  You have a number of .csv files used in this course in the directory "Data_Files". Create a new directory called "Data_Files_Copy" and use `file.copy()` to copy all of the .csv files into the new "Data_Files_Copy" directory. Make sure you copy *only* the .csv files.
+1.  You have a number of .csv files used in this course in the directory "Data_Files". Create a new directory called "Data_Files_Copy" and use `file_copy()` to copy all of the .csv files into the new "Data_Files_Copy" directory. Make sure you copy *only* the .csv files.
 
 ```{r, include = FALSE}
 ###Solution###
-dir.create("Data_Files_Copy")
-my.list <- list.files("Data_Files", pattern = ".csv", full.names = TRUE)
-file.copy(my.list,"Data_Files_Copy")
+dir_create("data_files_copy")
+my_list <- dir_ls(path = "Data_Files", glob = "*.csv")
+file_copy(my_list, "Data_Files_Copy")
 ```
 
 2. Rename the files created in (1) appending today's date to the file name so that the filenames look like this name-yyyy-mm-dd.csv. Make sure you do this in a generic fashion so that it will work regardless of how many files there are and what their initial names are. Use `Sys.Date()` to get the date. Use the `gsub()` command to replace ".jpg" with "yyyy-mm-dd.jpg".} 
 
 ```{r, include = FALSE}
 ###Solution###
-old.names <- list.files("Data_Files_Copy", pattern = ".csv", full.names = TRUE)
-new.names <- gsub(".csv",paste("-", Sys.Date(), ".csv", sep = ""), old.names)
-file.rename(old.names, new.names)
+old_names <- dir_ls(path = "data_files_copy", glob = "*.csv")
+new_names <- str_replace(old_names, ".csv", paste("-", Sys.Date(), ".csv", sep = ""))
+file_move(old_names, new_names)
 ```
 
 ## Writing a data frame to a csv file
@@ -2873,15 +2876,15 @@ Suppose you have done a bunch of work and you want to write it to a file so that
 For the sake of showing you what we mean, let's create a fake-o dataframe.
 
 ```{r}
-Subjects <- 1:10
-Secret.Identity <- c("Clark","Peter","Bruce","David","Orin","Dick","Diana","Steve",
-                     "Tony","Barry")
-Hero <- c("Superman","Spiderman","Batman","Hulk","Aquaman","Robin the Boy Wonder",
+subjects <- 1:10
+secret_identity <- c("Clark", "Peter", "Bruce", 
+                     "David", "Orin", "Dick", 
+                     "Diana", "Steve", "Tony", "Barry")
+hero <- c("Superman","Spiderman","Batman",
+          "Hulk","Aquaman","Robin the Boy Wonder",
           "Wonder Woman","Captain America","Iron Man","Flash")
-hero.data <- data.frame(Subjects,Secret.Identity,Hero)
-hero.data
-write.csv(file = "hero_data.csv", hero.data, row.names = FALSE, col.names = TRUE)
-## or try write_csv(hero.data, "hero_data.csv") - the tidyverse function has useful defaults built-in.
+hero_data <- tibble(subjects, secret_identity, hero)
+write_csv(hero_data, "hero_data.csv")
 ```
 
 Now go confirm that the file is there and open it in a spreadsheet program.
@@ -2889,10 +2892,19 @@ Now go confirm that the file is there and open it in a spreadsheet program.
 But what if you forgot one superhero and you needed to append? You can append the individual record to the existing file. Note that `col.names` is turned off and `append` is turned on.
 
 ```{r}
-forgotten.hero <- data.frame(Subjects = 11, Secret.Identity = "Kara", Hero = "Supergirl")
+subjects <- 1:10
+secret_identity <- c("Clark", "Peter", "Bruce", 
+                     "David", "Orin", "Dick", 
+                     "Diana", "Steve", "Tony", "Barry")
+hero <- c("Superman","Spiderman","Batman",
+          "Hulk","Aquaman","Robin the Boy Wonder",
+          "Wonder Woman","Captain America","Iron Man","Flash")
+hero_data <- tibble(subjects, secret_identity, hero)
+write_csv(hero_data, "hero_data.csv")
+
+forgotten_hero <- tibble(subjects = 11, secret_identity = "Kara", hero = "Supergirl")
 #you have to create it in an object of 1 column and 3 rows
-write.table(file = "hero_data.csv", forgotten.hero, row.names = FALSE,
-            col.names = FALSE, sep =  ",", append = TRUE)
+write_csv(forgotten.hero, "hero_data.csv", append = TRUE)
 ```
 
 Using this technique, you can add data to a file from a loop as the data is found to meet specific predefined criteria. For example, a resident and DH pulled all the hyponatremia occurrences from the LIS in 2014 and then looked for samples showing correction of Na^+^ that is clinically too rapid ($>8$ mmol/L in less than 24h). As these records were found, they were written to a file. 
